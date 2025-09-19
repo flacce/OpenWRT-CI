@@ -152,8 +152,14 @@ jobs:
       - name: 更新缓存并清理旧缓存
         if: env.WRT_TEST != 'true'
         run: |
+          # 调试信息
+          echo "当前工作目录: $(pwd)"
+          echo "环境变量WRT_CONFIG: $WRT_CONFIG"
+          echo "环境变量WRT_INFO: $WRT_INFO"
+          
           # 如果工具链缓存存在，更新时间戳以避免不必要的重新编译
           if [ -d "./wrt/staging_dir" ]; then
+            echo "找到工具链缓存目录"
             find "./wrt/staging_dir" -type d -name "stamp" -not -path "*target*" -exec find {} -type f -exec touch {} + \;
             mkdir -p ./wrt/tmp && echo "1" > ./wrt/tmp/.build
             echo "工具链缓存已恢复!"
@@ -161,14 +167,27 @@ jobs:
             echo "未找到工具链缓存，将从头开始编译。"
           fi
 
-          # 如果没有命中当前源码的精确缓存，则清理旧的缓存
-          if [ "${{steps.toolchain-cache.outputs.cache-hit}}" != "true" ]; then
-            gh cache list --key "toolchain-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}" --json key --jq '.[].key' | xargs -r -I {} gh cache delete {}
-            echo "旧的工具链缓存已被清理!"
+          # 检查缓存命中状态
+          echo "检查工具链缓存状态..."
+          if [ "${{steps.toolchain-cache.outputs.cache-hit}}" = "true" ]; then
+            echo "工具链缓存命中"
+          else
+            echo "工具链缓存未命中，清理旧缓存..."
+            gh cache list --key "toolchain-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}" --json key --jq '.[].key' | while read -r key; do
+              echo "删除缓存: $key"
+              gh cache delete "$key" || true
+            done
           fi
-          if [ "${{steps.ccache-cache.outputs.cache-hit}}" != "true" ]; then
-            gh cache list --key "ccache-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}" --json key --jq '.[].key' | xargs -r -I {} gh cache delete {}
-            echo "旧的 ccache 缓存已被清理!"
+
+          echo "检查ccache缓存状态..."
+          if [ "${{steps.ccache-cache.outputs.cache-hit}}" = "true" ]; then
+            echo "ccache缓存命中"
+          else
+            echo "ccache缓存未命中，清理旧缓存..."
+            gh cache list --key "ccache-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}" --json key --jq '.[].key' | while read -r key; do
+              echo "删除缓存: $key"
+              gh cache delete "$key" || true
+            done
           fi
 
       # 步骤8：更新 Feeds
