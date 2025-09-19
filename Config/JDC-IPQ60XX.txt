@@ -1,18 +1,41 @@
-#设备平台
-CONFIG_TARGET_qualcommax=y
-CONFIG_TARGET_qualcommax_ipq60xx=y
-#设备列表
+#
+# OpenWRT 配置文件 for JDC-IPQ60XX
+#
 
+#===========================================
+# 设备平台 (Target Platform)
+#===========================================
+# 目标平台为 Qualcomm AX
+CONFIG_TARGET_qualcommax=y
+# 目标子平台为 IPQ60xx
+CONFIG_TARGET_qualcommax_ipq60xx=y
+
+#===========================================
+# 设备型号 (Target Device)
+#===========================================
+# 目标设备为 京东云无线宝 RE-CS-02
 CONFIG_TARGET_DEVICE_qualcommax_ipq60xx_DEVICE_jdcloud_re-cs-02=y
+# 目标设备为 京东云无线宝 RE-SS-01
 CONFIG_TARGET_DEVICE_qualcommax_ipq60xx_DEVICE_jdcloud_re-ss-01=y
 
-
+#===========================================
+# LuCI 应用 (LuCI Applications)
+#===========================================
+# Passwall - 科学上网工具
 CONFIG_PACKAGE_luci-app-passwall=y
+# Passwall 中文语言包
 CONFIG_PACKAGE_luci-i18n-passwall-zh-cn=y
+# EasyTier - P2P 组网工具
 CONFIG_PACKAGE_easytier=y
+# EasyTier LuCI 界面
 CONFIG_PACKAGE_luci-app-easytier=y
+# MosDNS - DNS 转发和分流工具
 CONFIG_PACKAGE_mosdns=y
+# MosDNS LuCI 界面
 CONFIG_PACKAGE_luci-app-mosdns=y
+# ZeroTier - 虚拟局域网工具
 CONFIG_PACKAGE_luci-app-zerotier=y
+# AutoReboot - 定时重启
 CONFIG_PACKAGE_luci-app-autoreboot=y
+# WOL Plus - 网络唤醒
 CONFIG_PACKAGE_luci-app-wolplus=y

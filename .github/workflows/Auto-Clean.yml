@@ -1,24 +1,42 @@
-name: Auto-Clean
+# CI 项目名称
+name: 自动清理
 
+# CI 触发计划
 on:
-  #自动清理：每天早上6点
+  # 自动触发：每天 UTC 时间 22:00 (北京时间早上 6:00)
   schedule:
     - cron: 0 22 * * *
-  #手动清理
+  # 手动触发：允许手动运行此工作流程
   workflow_dispatch:
 
+# CI 任务权限
+# 给予所有任务读写权限，以便删除 Releases 和 Workflows
 permissions: write-all
 
+# CI 执行任务
 jobs:
   auto_clean:
+    # 任务名称
+    name: 自动清理任务
+    # 运行环境
     runs-on: ubuntu-latest
+    # 任务步骤
     steps:
-      - name: Delete old Releases and Workflows
+      # 步骤1：删除旧的 Releases 和 Workflows
+      - name: 删除旧的 Releases 和 Workflows
+        # 使用第三方 Action
         uses: ophub/delete-releases-workflows@main
+        # Action 所需参数
         with:
+          # GitHub Token，用于 API认证
           gh_token: ${{secrets.GITHUB_TOKEN}}
+          # 是否删除 Releases
           delete_releases: true
+          # 保留最新的 Releases 数量 (0 表示全部删除)
           releases_keep_latest: 0
+          # 是否删除与 Releases 关联的 Git Tags
           delete_tags: true
+          # 是否删除 Workflows 运行记录
           delete_workflows: true
+          # 保留最近几天的 Workflows 运行记录 (0 表示全部删除)
           workflows_keep_day: 0
