@@ -263,9 +263,6 @@ jobs:
               mv "$FILE" "./upload/$NEW_FILE"
             done
 
-            # 移动剩余文件
-            find ./bin/targets/ -type f -exec mv {} ./upload/ \; 2>/dev/null || true
-
             # 清理编译目录
             make clean -j$(nproc)
           fi
