@@ -65,3 +65,13 @@ if [ -f "$DM_FILE" ]; then
 
 	cd $PKG_PATH && echo "diskman has been fixed!"
 fi
+
+#修复 boost-system 依赖警告
+for PKG in domoticz i2pd kea; do
+  FILE=$(find ../feeds/packages/ -maxdepth 3 -type f -path "*/${PKG}/Makefile")
+  if [ -f "$FILE" ]; then
+    echo "Fixing dependency for ${PKG}..."
+    sed -i 's/+boost-system/+boost/g' "$FILE"
+    echo "${PKG} has been fixed!"
+  fi
+done
