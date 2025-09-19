@@ -141,40 +141,52 @@ jobs:
           # 将所有 txt 和 sh 文件转换为 Unix 格式并赋予执行权限
           find ./ -maxdepth 3 -type f -iregex ".*\\(txt\\|sh\\)$" -exec dos2unix {} \; -exec chmod +x {} \;
 
-      # 步骤6：检查编译缓存
-      - name: 检查编译缓存
-        id: check-cache
-        # 如果不是测试模式，则执行
+      # 步骤6：检查并恢复 ccache 缓存
+      - name: 恢复 ccache 缓存
+        id: ccache-cache
         if: env.WRT_TEST != 'true'
         uses: actions/cache@main
         with:
-          # 缓存的唯一 Key
-          key: ${{env.WRT_CONFIG}}-${{env.WRT_INFO}}-${{env.WRT_HASH}}
-          # 备用 Key，用于在源码 hash 变化时恢复部分缓存
-          restore-keys: ${{env.WRT_CONFIG}}-${{env.WRT_INFO}}
-          # 需要缓存的路径
+          path: ./wrt/.ccache
+          key: ccache-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}-${{env.WRT_HASH}}
+          restore-keys: |
+            ccache-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}-
+
+      # 步骤7：检查并恢复工具链和源码缓存
+      - name: 恢复工具链和源码缓存
+        id: toolchain-cache
+        if: env.WRT_TEST != 'true'
+        uses: actions/cache@main
+        with:
           path: |
-            ./wrt/.ccache
             ./wrt/staging_dir/host*
             ./wrt/staging_dir/tool*
+            ./wrt/dl
+          key: toolchain-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}-${{env.WRT_HASH}}
+          restore-keys: |
+            toolchain-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}-
 
-      # 步骤7：更新缓存时间戳
-      - name: 更新缓存时间戳
+      # 步骤8：更新缓存并清理旧缓存
+      - name: 更新缓存并清理旧缓存
         if: env.WRT_TEST != 'true'
         run: |
-          # 如果缓存存在，更新时间戳以避免不必要的重新编译
+          # 如果工具链缓存存在，更新时间戳以避免不必要的重新编译
           if [ -d "./wrt/staging_dir" ]; then
             find "./wrt/staging_dir" -type d -name "stamp" -not -path "*target*" -exec find {} -type f -exec touch {} + \;
             mkdir -p ./wrt/tmp && echo "1" > ./wrt/tmp/.build
             echo "工具链缓存已恢复!"
           else
-            echo "未找到缓存，将从头开始编译。"
+            echo "未找到工具链缓存，将从头开始编译。"
           fi
 
           # 如果没有命中当前源码的精确缓存，则清理旧的缓存
-          if [[ "${{steps.check-cache.outputs.cache-hit}}" != "true" ]]; then
-            gh cache list --key "$WRT_CONFIG-$WRT_INFO" --json key --jq '.[].key' | xargs -r -I {} gh cache delete {}
-            echo "旧的缓存已被清理!"
+          if [[ "${{steps.toolchain-cache.outputs.cache-hit}}" != "true" ]]; then
+            gh cache list --key "toolchain-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}" --json key --jq '.[].key' | xargs -r -I {} gh cache delete {}
+            echo "旧的工具链缓存已被清理!"
+          fi
+          if [[ "${{steps.ccache-cache.outputs.cache-hit}}" != "true" ]]; then
+            gh cache list --key "ccache-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}" --json key --jq '.[].key' | xargs -r -I {} gh cache delete {}
+            echo "旧的 ccache 缓存已被清理!"
           fi
 
       # 步骤8：更新 Feeds
