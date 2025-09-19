@@ -25,7 +25,7 @@
 ### 🎯 核心优势
 - **🤖 全自动化** - 基于 GitHub Actions，无需本地环境
 - **🔄 智能缓存** - 优化编译缓存策略，大幅缩短编译时间
-- **📱 多平台支持** - 支持 ROCKCHIP、MEDIATEK 等主流平台
+- **📱 多平台支持** - 支持高通、联发科、x86等，具体支持请看原项目
 - **🎨 精美界面** - 优化的 Web 管理界面和发布页面
 - **⚡ 性能优化** - 硬件加速支持，网络性能调优
 
@@ -38,26 +38,19 @@
 
 ## 🏗️ 支持平台
 
-### 📱 ROCKCHIP 平台
-支持基于 ROCKCHIP 芯片的设备，包括：
 
-| 品牌 | 设备型号 | 芯片 | 特性 |
-|------|----------|------|------|
-| **FriendlyARM** | NanoPC-T4/T6 | RK3399/RK3588 | 高性能开发板 |
-| **FriendlyARM** | NanoPi-R2C/R2S | RK3328 | 入门级路由器 |
-| **FriendlyARM** | NanoPi-R4S/R4SE | RK3399 | 企业级路由器 |
-| **FriendlyARM** | NanoPi-R5C/R5S | RK3568 | 新一代路由器 |
-| **FriendlyARM** | NanoPi-R6C/R6S | RK3588S | 旗舰级路由器 |
-| **快犀牛** | FastRhino-R66S/R68S | RK3568 | 商用路由器 |
-| **香橙派** | Orange Pi 5/5 Plus | RK3588S | 高性能单板机 |
-| **香橙派** | Orange Pi R1 Plus | RK3328 | 迷你路由器 |
+### 🔧 高通平台
+支持基于高通芯片的设备，包括：
+
+| 系列 | 芯片型号 | 特性 | 支持状态 |
+|------|----------|------|----------|
+| **IPQ50XX** | IPQ5000/IPQ5018等 | 入门级Wi-Fi 6 | ✅ 支持 |
+| **IPQ60XX** | IPQ6000/IPQ6018等 | 中端Wi-Fi 6 | ✅ 支持 |
+| **IPQ807X** | IPQ8071/IPQ8072/IPQ8074等 | 高端Wi-Fi 6 | ✅ 支持 |
 
 ### 🔧 MEDIATEK 平台
-支持联发科芯片设备（配置文件已准备）
+支持联发科芯片设备
 
-### 🎯 其他平台
-- **360-T7** - 360 路由器专用配置
-- **JDC-IPQ60XX** - 高通 IPQ60XX 系列
 
 ## 📦 内置插件
 
@@ -102,7 +95,9 @@ Config/
 ├── ROCKCHIP.txt     # ROCKCHIP 平台专用配置
 ├── MEDIATEK.txt     # MEDIATEK 平台专用配置
 ├── 360-T7.txt       # 360-T7 设备专用配置
-└── JDC-IPQ60XX.txt  # IPQ60XX 平台专用配置
+├── JDC-IPQ60XX.txt  # IPQ60XX 平台专用配置
+├── IPQ50XX.txt      # IPQ50XX 平台专用配置（Wi-Fi支持可选）
+└── IPQ807X.txt      # IPQ807X 平台专用配置（Wi-Fi支持可选）
 ```
 
 ### 🔧 核心配置项
@@ -164,7 +159,7 @@ OpenWRT-CI/
 编辑工作流文件中的网络参数：
 ```yaml
 WRT_IP: 192.168.1.1      # 管理地址
-WRT_PW: password         # 登录密码
+WRT_PW:          # 登录密码
 WRT_SSID: OpenWrt        # WiFi 名称
 WRT_WORD: 12345678       # WiFi 密码
 ```
@@ -231,7 +226,7 @@ WRT_WORD: 12345678       # WiFi 密码
 感谢以下项目和开发者的贡献：
 - [OpenWrt](https://openwrt.org/) - 开源路由器固件项目
 - [ImmortalWrt](https://github.com/immortalwrt/immortalwrt) - OpenWrt 分支项目
-- [P3TERX](https://github.com/P3TERX/Actions-OpenWrt) - GitHub Actions 编译方案
+- [VIKINGYFY](https://github.com/VIKINGYFY/OpenWRT-CI) - GitHub Actions 编译方案
 - 各插件开发者和维护者
 
 ## 📄 许可证
