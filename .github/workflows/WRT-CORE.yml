@@ -253,6 +253,8 @@ jobs:
         if: env.WRT_TEST != 'true'
         run: |
           cd ./wrt/
+          echo "设置编译环境变量..."
+          export FORCE_UNSAFE_CONFIGURE=1
           echo "使用 $(nproc) 线程开始编译..."
           # 设置文件权限
           chmod -R a+rX ../Config/
