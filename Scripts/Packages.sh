@@ -72,7 +72,11 @@ UPDATE_VERSION() {
 		local OLD_FILE=$(grep -Po "PKG_SOURCE:=\K.*" "$PKG_FILE")
 		local OLD_HASH=$(grep -Po "PKG_HASH:=\K.*" "$PKG_FILE")
 
-		local PKG_URL=$([ "$OLD_URL" = *"releases"* ] && echo "${OLD_URL%/}/$OLD_FILE" || echo "${OLD_URL%/}")
+		local PKG_URL=""
+		case "$OLD_URL" in
+			*"releases"*) PKG_URL="${OLD_URL%/}/$OLD_FILE" ;;
+			*) PKG_URL="${OLD_URL%/}" ;;
+		esac
 
 		local NEW_VER=$(echo $PKG_TAG | sed -E 's/[^0-9]+/\./g; s/^\.|\.$//g')
 		local NEW_URL=$(echo $PKG_URL | sed "s/\$(PKG_VERSION)/$NEW_VER/g; s/\$(PKG_NAME)/$PKG_NAME/g")

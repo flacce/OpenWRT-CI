@@ -244,10 +244,10 @@ jobs:
           # 备份配置文件
           cp -f ./.config ./upload/Config-"$WRT_CONFIG"-"$WRT_INFO"-"$WRT_BRANCH"-"$WRT_DATE".txt
 
-          if [[ $WRT_TEST != 'true' ]]; then
+          if [ "$WRT_TEST" != "true" ]; then
             # 从 manifest 文件中提取内核版本和插件列表
             MANIFEST_FILE=$(find ./bin/targets/ -name "*.manifest" | head -1)
-            if [[ -f "$MANIFEST_FILE" ]]; then
+            if [ -f "$MANIFEST_FILE" ]; then
               echo "WRT_KVER=$(grep -oP '^kernel - \K[\d\.]+' "$MANIFEST_FILE")" >> $GITHUB_ENV
               echo "WRT_LIST=$(grep -oP '^luci-(app|theme)[^ ]*' "$MANIFEST_FILE" | tr '\n' ' ')" >> $GITHUB_ENV
             fi
