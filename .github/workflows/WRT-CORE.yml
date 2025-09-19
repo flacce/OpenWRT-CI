@@ -99,7 +99,7 @@ jobs:
           echo "WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d-%H.%M.%S")" >> $GITHUB_ENV
           echo "WRT_MARK=${GITHUB_REPOSITORY%%/*}" >> $GITHUB_ENV
           echo "WRT_INFO=${WRT_SOURCE%%/*}" >> $GITHUB_ENV
-          echo "WRT_TARGET=$(grep -m 1 -oP '^CONFIG_TARGET_\K[\w]+(?=\=y)' ./Config/$WRT_CONFIG.txt)" >> $GITHUB_ENV
+          echo "WRT_TARGET=$(grep -m 1 -oP '^CONFIG_TARGET_\K[\w]+(?=\=y)' ../Config/$WRT_CONFIG.txt)" >> $GITHUB_ENV
           echo "WRT_KVER=none" >> $GITHUB_ENV
           echo "WRT_LIST=none" >> $GITHUB_ENV
 
@@ -107,9 +107,15 @@ jobs:
       - name: 克隆 OpenWRT 源码
         run: |
           git clone --depth=1 --single-branch --branch $WRT_BRANCH $WRT_REPO ./wrt/
+          echo "当前工作目录: $(pwd)"
+          echo "wrt目录内容:"
+          ls -la ./wrt/
 
           # 获取最新的 commit hash
           cd ./wrt/ && echo "WRT_HASH=$(git log -1 --pretty=format:'%h')" >> $GITHUB_ENV
+          echo "切换后工作目录: $(pwd)"
+          echo "Config目录内容:"
+          ls -la ../Config/
 
           # 移除国内的下载镜像，避免在海外CI环境下载失败
           PROJECT_MIRRORS_FILE="./scripts/projectsmirrors.json"
@@ -195,12 +201,16 @@ jobs:
       # 步骤10：应用自定义设置
       - name: 自定义系统设置
         run: |
+          echo "步骤开始前工作目录: $(pwd)"
           cd ./wrt/
+          echo "切换后工作目录: $(pwd)"
+          echo "尝试读取的配置文件路径: ../Config/$WRT_CONFIG.txt"
+          ls -la ../Config/
           # 合并通用配置和设备专用配置
           if [ "$(echo "${WRT_CONFIG}" | tr '[:upper:]' '[:lower:]')" = *"test"* ]; then
-            cat ./Config/$WRT_CONFIG.txt >> .config
+            cat ../Config/$WRT_CONFIG.txt >> .config
           else
-            cat ./Config/$WRT_CONFIG.txt ./Config/GENERAL.txt >> .config
+            cat ../Config/$WRT_CONFIG.txt ../Config/GENERAL.txt >> .config
           fi
           # 确保脚本有执行权限
           chmod +x ../Scripts/Settings.sh
