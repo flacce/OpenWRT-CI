@@ -99,14 +99,13 @@ jobs:
           echo "WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d-%H.%M.%S")" >> $GITHUB_ENV
           echo "WRT_MARK=${GITHUB_REPOSITORY%%/*}" >> $GITHUB_ENV
           echo "WRT_INFO=${WRT_SOURCE%%/*}" >> $GITHUB_ENV
-          echo "WRT_TARGET=$(grep -m 1 -oP '^CONFIG_TARGET_\K[\w]+(?=\\=y)' $GITHUB_WORKSPACE/config/$WRT_CONFIG.txt)" >> $GITHUB_ENV
+          echo "WRT_TARGET=$(grep -m 1 -oP '^CONFIG_TARGET_\K[\w]+(?=\=y)' ./config/$WRT_CONFIG.txt)" >> $GITHUB_ENV
           echo "WRT_KVER=none" >> $GITHUB_ENV
           echo "WRT_LIST=none" >> $GITHUB_ENV
 
       # 步骤3：克隆 OpenWRT 源码
       - name: 克隆 OpenWRT 源码
         run: |
-          cd $GITHUB_WORKSPACE
           git clone --depth=1 --single-branch --branch $WRT_BRANCH $WRT_REPO ./wrt/
 
           # 获取最新的 commit hash
@@ -183,8 +182,8 @@ jobs:
       - name: 自定义软件包和补丁
         run: |
           cd ./wrt/package/
-          $GITHUB_WORKSPACE/Scripts/Packages.sh
-          $GITHUB_WORKSPACE/Scripts/Handles.sh
+          ../../Scripts/Packages.sh
+          ../../Scripts/Handles.sh
 
       # 步骤10：应用自定义设置
       - name: 自定义系统设置
@@ -192,12 +191,12 @@ jobs:
           cd ./wrt/
           # 合并通用配置和设备专用配置
           if [[ "${WRT_CONFIG,,}" == *"test"* ]]; then
-            cat $GITHUB_WORKSPACE/config/$WRT_CONFIG.txt >> .config
+            cat ../config/$WRT_CONFIG.txt >> .config
           else
-            cat $GITHUB_WORKSPACE/config/$WRT_CONFIG.txt $GITHUB_WORKSPACE/config/GENERAL.txt >> .config
+            cat ../config/$WRT_CONFIG.txt ../config/GENERAL.txt >> .config
           fi
           # 运行自定义设置脚本
-          $GITHUB_WORKSPACE/Scripts/Settings.sh
+          ../Scripts/Settings.sh
           # 生成最终 .config 并清理
           make defconfig -j$(nproc) && make clean -j$(nproc)
 
