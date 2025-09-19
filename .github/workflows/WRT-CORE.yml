@@ -68,13 +68,13 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo -E apt -yqq purge firefox
-          sudo -E apt -yqq update
-          sudo -E apt -yqq full-upgrade
-          sudo -E apt -yqq autoremove --purge
-          sudo -E apt -yqq autoclean
-          sudo -E apt -yqq clean
+          sudo -E apt -yqq purge firefox && \
+          sudo -E apt -yqq update && \
+          sudo -E apt -yqq full-upgrade && \
+          sudo -E apt -yqq autoremove --purge && \
+          sudo -E apt -yqq autoclean && \
           sudo -E apt -yqq install dos2unix python3-netifaces libfuse-dev
+          
           sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
           sudo -E systemctl daemon-reload
           sudo -E timedatectl set-timezone "Asia/Shanghai"
@@ -124,24 +124,16 @@ jobs:
         if: env.WRT_TEST != 'true'
         run: |
           if [ -d "./wrt/staging_dir" ]; then
-            find "./wrt/staging_dir" -type d -name "stamp" -not -path "*target*" | while read -r DIR; do
-              find "$DIR" -type f -exec touch {} +
-            done
-
+            find "./wrt/staging_dir" -type d -name "stamp" -not -path "*target*" -exec find {} -type f -exec touch {} + \;
             mkdir -p ./wrt/tmp && echo "1" > ./wrt/tmp/.build
-
-            echo "toolchain skiped done!"
+            echo "toolchain cache restored!"
           else
-            echo "caches missed!"
+            echo "no cache found, will build from scratch"
           fi
 
-          if ${{steps.check-cache.outputs.cache-hit != 'true'}}; then
-            CACHE_LIST=$(gh cache list --key "$WRT_CONFIG-$WRT_INFO" | cut -f 1)
-            for CACHE_KEY in $CACHE_LIST; do
-              gh cache delete $CACHE_KEY
-            done
-
-            echo "caches cleanup done!"
+          if [[ "${{steps.check-cache.outputs.cache-hit}}" != "true" ]]; then
+            gh cache list --key "$WRT_CONFIG-$WRT_INFO" --json key --jq '.[].key' | xargs -r -I {} gh cache delete {}
+            echo "old caches cleaned up!"
           fi
 
       - name: Update Feeds
@@ -162,11 +154,7 @@ jobs:
         run: |
           cd ./wrt/
 
-          if [[ "${WRT_CONFIG,,}" == *"test"* ]]; then
-            cat $GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt >> .config
-          else
-            cat $GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt $GITHUB_WORKSPACE/Config/GENERAL.txt >> .config
-          fi
+          cat $GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt >> .config
 
           $GITHUB_WORKSPACE/Scripts/Settings.sh
 
@@ -184,7 +172,11 @@ jobs:
         run: |
           cd ./wrt/
 
-          make -j$(nproc) || make -j$(nproc) V=s
+          echo "Starting compilation with $(nproc) threads..."
+          make -j$(nproc) || {
+            echo "First compilation failed, retrying with verbose output..."
+            make -j1 V=s
+          }
 
       - name: Machine Information
         run: |
@@ -200,24 +192,31 @@ jobs:
 
       - name: Package Firmware
         run: |
-          cd ./wrt/ && mkdir ./upload/
+          cd ./wrt/ && mkdir -p ./upload/
 
           cp -f ./.config ./upload/Config-"$WRT_CONFIG"-"$WRT_INFO"-"$WRT_BRANCH"-"$WRT_DATE".txt
 
           if [[ $WRT_TEST != 'true' ]]; then
-            echo "WRT_KVER=$(find ./bin/targets/ -type f -name "*.manifest" -exec grep -oP '^kernel - \K[\d\.]+' {} \;)" >> $GITHUB_ENV
-            echo "WRT_LIST=$(find ./bin/targets/ -type f -name "*.manifest" -exec grep -oP '^luci-(app|theme)[^ ]*' {} \; | tr '\n' ' ')" >> $GITHUB_ENV
+            # Extract kernel version and package list from manifest
+            MANIFEST_FILE=$(find ./bin/targets/ -name "*.manifest" | head -1)
+            if [[ -f "$MANIFEST_FILE" ]]; then
+              echo "WRT_KVER=$(grep -oP '^kernel - \K[\d\.]+' "$MANIFEST_FILE")" >> $GITHUB_ENV
+              echo "WRT_LIST=$(grep -oP '^luci-(app|theme)[^ ]*' "$MANIFEST_FILE" | tr '\n' ' ')" >> $GITHUB_ENV
+            fi
 
-            find ./bin/targets/ -iregex ".*\(buildinfo\|json\|sha256sums\|packages\)$" -exec rm -rf {} +
+            # Clean up unnecessary files
+            find ./bin/targets/ -type f \( -name "*.buildinfo" -o -name "*.json" -o -name "*sha256sums" -o -name "*packages" \) -delete
 
-            for FILE in $(find ./bin/targets/ -type f -iname "*$WRT_TARGET*") ; do
-              EXT=$(basename $FILE | cut -d '.' -f 2-)
-              NAME=$(basename $FILE | cut -d '.' -f 1 | grep -io "\($WRT_TARGET\).*")
-              NEW_FILE="$WRT_INFO"-"$WRT_BRANCH"-"$NAME"-"$WRT_DATE"."$EXT"
-              mv -f $FILE ./upload/$NEW_FILE
+            # Rename and move firmware files
+            find ./bin/targets/ -type f -iname "*$WRT_TARGET*" | while read -r FILE; do
+              EXT="${FILE##*.}"
+              NAME=$(basename "$FILE" | grep -io "$WRT_TARGET.*" | cut -d'.' -f1)
+              NEW_FILE="$WRT_INFO-$WRT_BRANCH-$NAME-$WRT_DATE.$EXT"
+              mv "$FILE" "./upload/$NEW_FILE"
             done
 
-            find ./bin/targets/ -type f -exec mv -f {} ./upload/ \;
+            # Move remaining files
+            find ./bin/targets/ -type f -exec mv {} ./upload/ \; 2>/dev/null || true
 
             make clean -j$(nproc)
           fi
