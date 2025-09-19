@@ -167,28 +167,9 @@ jobs:
             echo "未找到工具链缓存，将从头开始编译。"
           fi
 
-          # 检查缓存命中状态
-          echo "检查工具链缓存状态..."
-          if [ "${{steps.toolchain-cache.outputs.cache-hit}}" = "true" ]; then
-            echo "工具链缓存命中"
-          else
-            echo "工具链缓存未命中，清理旧缓存..."
-            gh cache list --key "toolchain-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}" --json key --jq '.[].key' | while read -r key; do
-              echo "删除缓存: $key"
-              gh cache delete "$key" || true
-            done
-          fi
-
-          echo "检查ccache缓存状态..."
-          if [ "${{steps.ccache-cache.outputs.cache-hit}}" = "true" ]; then
-            echo "ccache缓存命中"
-          else
-            echo "ccache缓存未命中，清理旧缓存..."
-            gh cache list --key "ccache-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}" --json key --jq '.[].key' | while read -r key; do
-              echo "删除缓存: $key"
-              gh cache delete "$key" || true
-            done
-          fi
+          # 简化缓存状态检查
+          echo "工具链缓存状态: ${{steps.toolchain-cache.outputs.cache-hit}}"
+          echo "ccache缓存状态: ${{steps.ccache-cache.outputs.cache-hit}}"
 
       # 步骤8：更新 Feeds
       - name: 更新 Feeds
