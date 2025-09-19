@@ -83,8 +83,8 @@ jobs:
     # 指定一个预配置的 Docker 容器作为编译环境
     container:
       image: p3terx/openwrt-build-env
-      # 使用镜像预置的openwrt用户
-      options: --user 1000
+      # 默认使用root用户，仅在编译阶段切换用户
+      options: --user root
 
     # 任务步骤
     steps:
@@ -233,8 +233,9 @@ jobs:
         run: |
           cd ./wrt/
           echo "使用 $(nproc) 线程开始编译..."
-          # 直接使用openwrt用户执行
-          make -j$(nproc) || make -j1 V=s
+          # 切换至openwrt用户执行编译
+          chown -R 1000:1000 .
+          sudo -u openwrt make -j$(nproc) || sudo -u openwrt make -j1 V=s
           # 尝试并行编译，如果失败，则使用单线程详细日志模式重试
           make -j$(nproc) || {
             echo "首次编译失败，正在尝试使用单线程详细日志模式重试..."
