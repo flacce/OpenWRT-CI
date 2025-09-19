@@ -162,11 +162,11 @@ jobs:
           fi
 
           # 如果没有命中当前源码的精确缓存，则清理旧的缓存
-          if [[ "${{steps.toolchain-cache.outputs.cache-hit}}" != "true" ]]; then
+          if [ "${{steps.toolchain-cache.outputs.cache-hit}}" != "true" ]; then
             gh cache list --key "toolchain-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}" --json key --jq '.[].key' | xargs -r -I {} gh cache delete {}
             echo "旧的工具链缓存已被清理!"
           fi
-          if [[ "${{steps.ccache-cache.outputs.cache-hit}}" != "true" ]]; then
+          if [ "${{steps.ccache-cache.outputs.cache-hit}}" != "true" ]; then
             gh cache list --key "ccache-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}" --json key --jq '.[].key' | xargs -r -I {} gh cache delete {}
             echo "旧的 ccache 缓存已被清理!"
           fi
@@ -182,21 +182,27 @@ jobs:
       - name: 自定义软件包和补丁
         run: |
           cd ./wrt/package/
-          ../../Scripts/Packages.sh
-          ../../Scripts/Handles.sh
+          # 确保脚本有执行权限
+          chmod +x ../../Scripts/Packages.sh
+          chmod +x ../../Scripts/Handles.sh
+          # 明确使用bash执行脚本
+          bash ../../Scripts/Packages.sh
+          bash ../../Scripts/Handles.sh
 
       # 步骤10：应用自定义设置
       - name: 自定义系统设置
         run: |
           cd ./wrt/
           # 合并通用配置和设备专用配置
-          if [[ "${WRT_CONFIG,,}" == *"test"* ]]; then
+          if [ "$(echo "${WRT_CONFIG}" | tr '[:upper:]' '[:lower:]')" = *"test"* ]; then
             cat ../config/$WRT_CONFIG.txt >> .config
           else
             cat ../config/$WRT_CONFIG.txt ../config/GENERAL.txt >> .config
           fi
+          # 确保脚本有执行权限
+          chmod +x ../Scripts/Settings.sh
           # 运行自定义设置脚本
-          ../Scripts/Settings.sh
+          bash ../Scripts/Settings.sh
           # 生成最终 .config 并清理
           make defconfig -j$(nproc) && make clean -j$(nproc)
 
